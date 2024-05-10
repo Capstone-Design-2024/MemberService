@@ -47,17 +47,34 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Remove existing image from ECR
-        run: |
-          aws ecr batch-delete-image --repository-name yhp-capstone-repository --image-ids imageTag=member-service || true
+      - name: Set timestamp
+        id: vars
+        run: echo "TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
 
       - name: Build & Push to ECR
         run: |
           docker build -t member-service .
-          TIMESTAMP=$(date +%s)
           IMAGE_TAG="${{ secrets.AWS_ACCOUNT_NUM }}.dkr.ecr.ap-northeast-2.amazonaws.com/yhp-capstone-repository:member-service-${TIMESTAMP}"
           docker tag member-service $IMAGE_TAG
           docker push $IMAGE_TAG
+        env:
+          TIMESTAMP: ${{ env.TIMESTAMP }}
+
+      - name: Trigger Kustomize Repository Workflow
+        run: |
+          JSON_PAYLOAD=$(jq -n \
+            --arg image_tag "member-service-${TIMESTAMP}" \
+            --arg target_kusto "member-kustomize" \
+            '{event_type: "update-image-tag", client_payload: {image_tag: $image_tag, target_kusto: $target_kusto}}')
+          curl -X POST -u "Capstone-Design-2024:${{ secrets.G_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/Capstone-Design-2024/Manifest/dispatches \
+          -d "$JSON_PAYLOAD"
+        env:
+          TIMESTAMP: ${{ env.TIMESTAMP }}
+
+
+
 
       # - name: Build & Push to ECR
       #   run: |
