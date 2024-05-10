@@ -1,4 +1,4 @@
-name: Docker Image MEMBER_SERVICE CI
+name: Docker Image Capstone_MEMBER_SERVICE CI
 
 on:
   push:
