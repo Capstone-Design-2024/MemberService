@@ -9,6 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v3
 
@@ -24,9 +29,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Init with Gradle
-        uses: gradle/gradle-build-action@v2
-      - run: gradle init
+#      - name: Init with Gradle
+#        uses: gradle/gradle-build-action@v2
+#      - run: gradle init
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -37,11 +42,16 @@ jobs:
           gradle-version: 7.5
           arguments: build -x test
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ap-northeast-2
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::846035848117:role/Itemize-github-action
           aws-region: ap-northeast-2
 
       - name: Login to ECR
